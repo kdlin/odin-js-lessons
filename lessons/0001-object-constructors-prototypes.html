@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Object Constructors &amp; Prototypes — JS for Java Devs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+<link rel="stylesheet" href="../assets/toolbar.css">
+<style>
+/* ---- lesson-specific components ---- */
+.symbol-ref {
+  background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1rem 1.3rem; margin: 1.2rem 0;
+  font-family: var(--mono); font-size: 0.8rem; line-height: 2; color: var(--text-soft);
+}
+.symbol-ref .sym-title {
+  font-family: var(--sans); font-size: 0.7rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; font-weight: 600;
+}
+.symbol-ref code { color: var(--accent); background: rgba(255,111,94,0.08); padding: 0.1rem 0.4rem; border-radius: 4px; }
+
+.worked-example { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 14px; padding: 1.3rem 1.5rem; margin: 1.4rem 0; }
+.worked-example h4 { color: var(--white); margin: 0 0 0.8rem; font-size: 0.95rem; }
+.worked-example .step { display: flex; gap: 0.7rem; margin: 0.6rem 0; font-size: 0.86rem; color: var(--text-soft); }
+.worked-example .step-num { font-family: var(--mono); font-size: 0.72rem; color: var(--accent); font-weight: 600; min-width: 1.6rem; }
+.worked-example .result { font-family: var(--mono); font-size: 0.82rem; color: var(--good); margin-top: 0.6rem; padding: 0.5rem 0.8rem; background: rgba(74,222,128,0.05); border-radius: 6px; border: 1px solid rgba(74,222,128,0.15); }
+
+.trap { background: rgba(255,111,94,0.04); border: 1px solid rgba(255,111,94,0.25); border-left: 3px solid var(--accent); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.2rem 0; font-size: 0.88rem; color: var(--text-soft); }
+.trap .tag { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 0.35rem; font-weight: 600; }
+
+.insight { background: rgba(255,111,94,0.05); border: 1px solid rgba(255,111,94,0.2); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.2rem 0; font-size: 0.88rem; color: var(--text-soft); }
+.insight .tag { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 0.35rem; }
+
+.practice { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.3rem 1.5rem; margin: 1.6rem 0; }
+.practice h4 { color: var(--white); margin: 0 0 0.3rem; font-size: 0.92rem; }
+.practice .domain { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); margin-bottom: 0.8rem; }
+.practice .prompt { font-size: 0.88rem; color: var(--text); margin: 0.6rem 0; line-height: 1.6; }
+.practice .show-btn { display: inline-flex; padding: 0.4rem 0.9rem; border-radius: 100px; font-size: 0.78rem; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-soft); font-family: var(--sans); margin-top: 0.6rem; }
+.practice .show-btn:hover { border-color: var(--white); color: var(--white); }
+.practice .answer { display: none; margin-top: 0.8rem; padding: 0.8rem 1rem; background: rgba(74,222,128,0.04); border: 1px solid rgba(74,222,128,0.15); border-radius: 10px; font-size: 0.84rem; color: var(--text-soft); font-family: var(--mono); line-height: 1.8; }
+.practice .answer.visible { display: block; }
+
+.quiz { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.6rem; margin: 1.5rem 0; }
+.quiz-q { font-weight: 600; color: var(--white); margin: 1.4rem 0 0.6rem; font-size: 0.95rem; }
+.quiz-opts { list-style: none; padding: 0; margin: 0; }
+.quiz-opts li { padding: 0.6rem 1rem; margin: 0.4rem 0; border-radius: 10px; cursor: pointer; border: 1px solid var(--border); font-size: 0.88rem; display: flex; align-items: center; gap: 0.7rem; color: var(--text-soft); }
+.quiz-opts li .radio { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1.5px solid var(--border-hi); flex: none; }
+.quiz-opts li.correct { border-color: var(--good); background: rgba(74,222,128,0.06); }
+.quiz-opts li.correct .radio { background: var(--good); border-color: var(--good); }
+.quiz-opts li.wrong-flash { animation: shake 0.4s ease; border-color: var(--accent); }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+.quiz-answer { display: none; background: rgba(74,222,128,0.06); border: 1px solid rgba(74,222,128,0.2); border-radius: 12px; padding: 1rem; margin-top: 0.8rem; font-size: 0.9rem; color: var(--text-soft); }
+
+/* code blocks in the lesson body */
+.code-block { margin: 1.2rem 0; }
+.code-block pre { margin: 0; padding: 1rem 1.2rem; overflow-x: auto; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; }
+.code-block code { font-family: var(--mono); font-size: 0.8rem; line-height: 1.75; color: var(--text-soft); white-space: pre; background: none; padding: 0; }
+.code-block .cap { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 0.4rem; }
+.code-block .cmt { color: var(--muted); }
+.code-block .good-line { color: var(--good); }
+.code-block .bad-line { color: var(--accent); }
+
+/* Java vs JS comparison table */
+.cmp-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.82rem; margin: 1rem 0; }
+.cmp-table th { color: var(--accent); padding: 0.5rem 0.8rem; text-align: left; font-weight: 600; border-bottom: 1px solid rgba(255,111,94,0.3); font-family: var(--mono); font-size: 0.75rem; }
+.cmp-table td { padding: 0.5rem 0.8rem; color: var(--text-soft); text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; line-height: 1.55; }
+.cmp-table code { font-family: var(--mono); font-size: 0.9em; color: var(--accent); background: rgba(255,111,94,0.08); padding: 0.05rem 0.3rem; border-radius: 4px; }
+.cmp-wrap { overflow-x: auto; }
+
+.time { font-size: 0.55em; font-weight: 400; color: var(--muted); font-family: var(--mono); vertical-align: middle; margin-left: 0.6rem; }
+
+/* two-up grids collapse on mobile */
+.duo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.2rem 0; }
+@media (max-width: 640px) {
+  .duo-grid { grid-template-columns: 1fr; }
+  .cmp-table { font-size: 0.76rem; }
+  .code-block code { font-size: 0.74rem; }
+}
+</style>
+</head>
+<body>
+<main class="lesson">
+  <p class="eyebrow">JAVASCRIPT / Lesson 1 · Organizing JavaScript</p>
+  <h1>Object Constructors &amp; Prototypes</h1>
+  <p class="dek">How JavaScript builds "classes" out of plain functions and live objects — taught through the Java you already know.</p>
+  <p style="font-family:var(--mono);font-size:0.78rem;color:var(--muted);">Total: ~45 min</p>
+
+  <div class="callout reveal">
+    <span class="label">Why This Matters</span>
+    Prototypes and <code>this</code> are the two places where your Java intuition is actively <strong>wrong</strong>, not just incomplete — and they're top-tier JS interview topics. Everything React and Node does with objects sits on this machinery. Master it here and the upcoming <em>Classes</em> lesson becomes pure syntax.
+  </div>
+
+  <!-- ============ 1. BIG PICTURE ============ -->
+  <h2 class="reveal">1. The Big Picture: Java Bundles, JS Splits <span class="time">⏱ 4 min</span></h2>
+
+  <p class="reveal">In Java, a <strong>class</strong> is one sealed unit: fields, constructors, instance methods, statics — everything a type is, declared together, frozen at compile time. JavaScript takes that bundle and <strong>splits it into two live pieces</strong>:</p>
+
+  <div class="cmp-wrap reveal">
+  <table class="cmp-table">
+    <tr><th>Java class part</th><th>Where it lives in JS</th></tr>
+    <tr><td>Constructor + field declarations</td><td>A plain <strong>constructor function</strong> — <code>function Book(...)</code></td></tr>
+    <tr><td>Instance methods (shared, one copy)</td><td>The <strong>prototype object</strong> — <code>Book.prototype</code></td></tr>
+    <tr><td>The hidden "which class am I?" pointer</td><td>Each instance's hidden <strong>[[Prototype]]</strong> link</td></tr>
+    <tr><td><code>java.lang.Object</code> at the top</td><td><code>Object.prototype</code> at the end of the chain</td></tr>
+  </table>
+  </div>
+
+  <p class="reveal">Nothing here is conceptually new to you — Java does all of this too. The difference: <strong>Java hides the machinery; JS hands you the parts.</strong> The method table is a real object you can inspect and edit at runtime. That visibility is the whole lesson.</p>
+
+  <div class="insight reveal">
+    <span class="tag">Key Insight</span>
+    You have used prototypes for years without knowing it. Every time Java shared one method implementation across 1,000 instances, that was a prototype by another name — just sealed away from you.
+  </div>
+
+  <!-- ============ 2. CONSTRUCTORS & NEW ============ -->
+  <h2 class="reveal">2. Constructor Functions &amp; <code>new</code> <span class="time">⏱ 8 min</span></h2>
+
+  <div class="symbol-ref reveal">
+    <div class="sym-title">Terms in this section</div>
+    <code>constructor function</code> — a plain function used with new; capitalized by convention only<br>
+    <code>new</code> — the operator that turns a function call into instance creation<br>
+    <code>new.target</code> — meta-property: set when called with new, undefined otherwise<br>
+    <code>this</code> — inside a new-call: the freshly created object
+  </div>
+
+  <p class="reveal">There is no <code>class</code> required. A constructor is just a function that assigns onto <code>this</code>:</p>
+
+  <div class="code-block reveal"><pre><code>function Player(name, marker) {
+  this.name = name;
+  this.marker = marker;
+}
+
+const player1 = new Player("steve", "X");
+player1.name; <span class="cmt">// "steve"</span></code></pre>
+  <div class="cap">The Java equivalent is the constructor body alone — no class wrapper exists.</div></div>
+
+  <p class="reveal"><strong>What <code>new</code> actually does</strong> — four steps, memorize them:</p>
+
+  <div class="worked-example reveal">
+    <h4>new Player("steve", "X"), step by step</h4>
+    <div class="step"><span class="step-num">1</span><span>Create a brand-new empty object <code>{}</code></span></div>
+    <div class="step"><span class="step-num">2</span><span>Link its hidden [[Prototype]] to <code>Player.prototype</code> (the "stamping" — more in §3)</span></div>
+    <div class="step"><span class="step-num">3</span><span>Run the function body with <code>this</code> = that new object (so <code>this.name = name</code> writes onto it)</span></div>
+    <div class="step"><span class="step-num">4</span><span>Return the object automatically — no <code>return</code> statement needed</span></div>
+    <div class="result">player1 → { name: "steve", marker: "X" } + hidden link to Player.prototype</div>
+  </div>
+
+  <div class="trap reveal">
+    <span class="tag">Trap — impossible in Java, routine here</span>
+    Calling <code>Player("steve", "X")</code> <strong>without</strong> <code>new</code> doesn't error by default. It runs as a plain function, <code>this</code> is undefined (strict mode) or the global object, and your properties leak into nowhere. Java's compiler makes this mistake unrepresentable; JS needs a guard:
+    <div class="code-block" style="margin-top:0.8rem;"><pre><code>function Player(name, marker) {
+  if (!new.target) {
+    throw Error("You must use the 'new' operator to call the constructor");
+  }
+  this.name = name;
+  this.marker = marker;
+}</code></pre></div>
+  </div>
+
+  <p class="reveal">Granular Java diffs worth 10 seconds each: there is <strong>no overloading</strong> (one function per name — the last definition silently wins, and any function accepts any number of args); an explicit <code>return &lt;object&gt;</code> inside a constructor <em>hijacks</em> the result while returning a primitive is silently ignored; and <code>const player1</code> is Java's <code>final</code> reference — binding locked, object still fully mutable.</p>
+
+  <div class="practice reveal">
+    <h4>Practice: Song constructor</h4>
+    <div class="domain">domain: music — you play guitar, use it</div>
+    <p class="prompt"><strong>Q:</strong> Write a guarded constructor <code>Song(title, artist, bpm)</code> and instantiate one. Then, without running it: what does <code>mySong.genre</code> evaluate to — error or something else, and why is that different from Java?</p>
+    <button class="show-btn" onclick="this.nextElementSibling.classList.toggle('visible')">Show Answer</button>
+    <div class="answer">function Song(title, artist, bpm) {<br>&nbsp;&nbsp;if (!new.target) throw Error("use new");<br>&nbsp;&nbsp;this.title = title;<br>&nbsp;&nbsp;this.artist = artist;<br>&nbsp;&nbsp;this.bpm = bpm;<br>}<br>const mySong = new Song("Neon", "John Mayer", 122);<br><br>mySong.genre → undefined. No compile error, no exception — JS returns undefined for any missing property. Java would refuse to compile. This is the #1 silent-bug class for Java devs: typos fail three functions later, not at the read.</div>
+  </div>
+
+  <!-- ============ 3. TWO THINGS NAMED PROTOTYPE ============ -->
+  <h2 class="reveal">3. The Two Things Named "Prototype" <span class="time">⏱ 9 min</span></h2>
+
+  <p class="reveal">This is the confusion point for almost everyone, so here is the honest framing: <strong>JavaScript uses one word for two different slots.</strong></p>
+
+  <div class="symbol-ref reveal">
+    <div class="sym-title">The two slots</div>
+    <code>Fn.prototype</code> — a visible property that only FUNCTIONS have<br>
+    <code>[[Prototype]]</code> — a hidden link that every OBJECT has (read: <code>Object.getPrototypeOf(obj)</code>)
+  </div>
+
+  <p class="reveal"><strong>The factory analogy.</strong> The constructor is a <em>factory</em>, instances are <em>products</em>, and the prototype object is a <em>service center</em> where shared capability lives:</p>
+
+  <div class="duo-grid reveal">
+    <div class="callout" style="margin:0;">
+      <span class="label">Fn.prototype — the card on the factory wall</span>
+      The factory keeps an address card pinned up: <em>"stamp THIS service-center address on every product we ship."</em> It exists from the moment the function is <strong>defined</strong> — before any instance. It does nothing by itself.
+    </div>
+    <div class="callout" style="margin:0;">
+      <span class="label">[[Prototype]] — the stamp on the product</span>
+      Every product rolls off the line with the address <strong>stamped on its underside</strong>: <em>"if I can't do something, I go here."</em> Stamped once, at that product's creation moment, by <code>new</code>.
+    </div>
+  </div>
+
+  <p class="reveal">Same address, two locations. That's why this is always <code>true</code>:</p>
+
+  <div class="code-block reveal"><pre><code>Object.getPrototypeOf(player1) === Player.prototype; <span class="cmt">// true — the stamp equals the card it was copied from</span></code></pre></div>
+
+  <p class="reveal"><strong>Java mapping:</strong> <code>[[Prototype]]</code> ≈ the hidden class-pointer in every Java object's header. <code>Fn.prototype</code> has <strong>no Java equivalent at all</strong> — Java never gives you a handle on "what future instances will point to." JS hands you the card.</p>
+
+  <p class="reveal">And methods? Data goes in the constructor; behavior goes <strong>on the card</strong>:</p>
+
+  <div class="code-block reveal"><pre><code>function Player(name, marker) {
+  this.name = name;      <span class="cmt">// data: per-instance, in the constructor</span>
+  this.marker = marker;
+}
+
+<span class="good-line">Player.prototype.sayName = function() {   // behavior: ONE shared copy</span>
+<span class="good-line">  return this.name;</span>
+<span class="good-line">};</span></code></pre>
+  <div class="cap">1,000 players, one sayName. Exactly what Java's method area does for you silently.</div></div>
+
+  <div class="trap reveal">
+    <span class="tag">Trap — methods inside the constructor</span>
+    <code>this.sayName = function() {...}</code> inside the constructor <em>works</em>, but stamps a private copy of the function into <strong>every instance</strong> — like every Java object carrying its own duplicate of every method. Legal, occasionally deliberate (closures, later lesson), but the default is: <strong>data on the instance, methods on the prototype.</strong>
+  </div>
+
+  <div class="insight reveal">
+    <span class="tag">Key Insight</span>
+    <code>.prototype</code> is not a method — it's a data property. And it can sit on a function because <strong>functions are objects</strong> in JS (callable objects that carry properties). One-way street: objects are NOT functions. Think <code>Function extends Object</code>.
+  </div>
+
+  <!-- ============ 4. LIVE LOOKUP & THE TRAP ============ -->
+  <h2 class="reveal">4. Live Lookup — Mutation vs Reassignment <span class="time">⏱ 9 min</span></h2>
+
+  <p class="reveal">Property lookup runs <strong>fresh at every access</strong>: check the object's own properties; miss → follow the stamp; check the card <em>as it is right now</em>. The card is live. This has a beautiful consequence and a nasty trap, and they look almost identical:</p>
+
+  <div class="code-block reveal"><pre><code><span class="good-line">Dog.prototype.bark = function() {...}  // MUTATE the card  → ALL instances, past + future ✅</span>
+<span class="bad-line">Dog.prototype = { bark() {...} }       // REPLACE the card → FUTURE instances only ⚠️</span></code></pre></div>
+
+  <p class="reveal">You already know this distinction from Java — it's reference semantics:</p>
+
+  <div class="code-block reveal"><pre><code>list.add(x);              <span class="cmt">// mutate: everyone holding this list sees x</span>
+list = new ArrayList&lt;&gt;(); <span class="cmt">// reassign: old holders keep the OLD list, unaffected</span></code></pre></div>
+
+  <div class="worked-example reveal">
+    <h4>The rex / pup experiment — run this in your console</h4>
+    <div class="step"><span class="step-num">1</span><span><code>function Dog(name) { this.name = name; }</code> — card created, empty-ish</span></div>
+    <div class="step"><span class="step-num">2</span><span><code>const rex = new Dog("Rex")</code> — rex stamped with the ORIGINAL card's address</span></div>
+    <div class="step"><span class="step-num">3</span><span><code>Dog.prototype = { bark() { return "woof"; } }</code> — factory swaps in a NEW card. Nothing re-stamps rex</span></div>
+    <div class="step"><span class="step-num">4</span><span><code>const pup = new Dog("Pup")</code> — pup stamped with the NEW card</span></div>
+    <div class="result">pup.bark() → "woof" ✅&nbsp;&nbsp;&nbsp;rex.bark() → TypeError ❌ — rex's lookup IS live, but live against the original object, which never got bark</div>
+  </div>
+
+  <div class="insight reveal">
+    <span class="tag">The rule, one sentence</span>
+    A prototype method must exist at <strong>call time</strong>, and the dangerous operation is <strong>reassignment</strong> (<code>Fn.prototype = {...}</code>), never mutation (<code>Fn.prototype.m = ...</code>). The stamp is the <em>address of the building</em>, not a photo of its contents on stamping day — renovate freely; demolish-and-redirect splits history.
+  </div>
+
+  <div class="practice reveal">
+    <h4>Practice: Predict the output</h4>
+    <div class="domain">domain: pokemon</div>
+    <p class="prompt"><strong>Q:</strong> <code>function Pokemon(name) { this.name = name; }</code> → <code>const pika = new Pokemon("Pikachu")</code> → <code>Pokemon.prototype.attack = function() { return this.name + " used Thunderbolt!"; }</code> → what does <code>pika.attack()</code> return, and why does this NOT contradict the rex case?</p>
+    <button class="show-btn" onclick="this.nextElementSibling.classList.toggle('visible')">Show Answer</button>
+    <div class="answer">"Pikachu used Thunderbolt!" — works fine.<br><br>This is MUTATION (writing onto the existing card via dot), so pika's live lookup finds attack at call time even though pika was created first. rex broke because his card was REPLACED (=), orphaning him on the old object. Dot-write = renovation; equals-write on .prototype = demolition.</div>
+  </div>
+
+  <!-- ============ 5. THE CHAIN ============ -->
+  <h2 class="reveal">5. The Prototype Chain <span class="time">⏱ 6 min</span></h2>
+
+  <p class="reveal">The card is an object, so <em>it has a stamp too</em>. Miss on the card → follow ITS stamp. Repeat until the chain ends:</p>
+
+  <div class="code-block reveal"><pre><code>player1 → Player.prototype → Object.prototype → null
+<span class="cmt">// own props    sayName            toString, valueOf,     end of
+//  name, marker                    hasOwnProperty         the line</span></code></pre></div>
+
+  <p class="reveal"><code>Object.prototype</code> is JS's <code>java.lang.Object</code>: the shared ancestor supplying defaults. That's where <code>player1.valueOf()</code> comes from when you never defined it. Prove where things live:</p>
+
+  <div class="code-block reveal"><pre><code>player1.hasOwnProperty("name");     <span class="cmt">// true  — own furniture</span>
+player1.hasOwnProperty("sayName");  <span class="cmt">// false — found up the chain (Player.prototype)</span>
+player1.hasOwnProperty("valueOf");  <span class="cmt">// false — two hops up (Object.prototype)</span>
+Object.getPrototypeOf(Object.prototype); <span class="cmt">// null — chain over; misses become undefined</span></code></pre></div>
+
+  <div class="cmp-wrap reveal">
+  <table class="cmp-table">
+    <tr><th>java.lang.Object gives you</th><th>Object.prototype gives you</th></tr>
+    <tr><td><code>toString()</code></td><td><code>toString()</code> — default "[object Object]", override the same way</td></tr>
+    <tr><td><code>equals()</code> / <code>hashCode()</code></td><td><strong>Nothing.</strong> No equality protocol exists; <code>===</code> is reference-compare, not overridable</td></tr>
+    <tr><td>(no equivalent)</td><td><code>valueOf()</code> — object→primitive coercion hook (numeric contexts)</td></tr>
+    <tr><td>(can't ask this)</td><td><code>hasOwnProperty()</code> — "mine, or inherited?" Only meaningful with visible chains</td></tr>
+  </table>
+  </div>
+
+  <div class="trap reveal">
+    <span class="tag">Trap — shadowing</span>
+    An own property with the same name as a prototype property <strong>wins lookup for that one object only</strong> (own props are checked first). Like Java field hiding, but per-object, at runtime, silently. <code>player1.sayName = ...</code> masks the shared method for player1 alone.
+  </div>
+
+  <!-- ============ 6. INHERITANCE ============ -->
+  <h2 class="reveal">6. Prototypal Inheritance <span class="time">⏱ 6 min</span></h2>
+
+  <p class="reveal">Java: <code>class Player extends Person</code> — a compile-time declaration between types. JS: physically <strong>link the two cards</strong> at runtime, so a miss on Player's card forwards to Person's:</p>
+
+  <div class="code-block reveal"><pre><code>function Person(name) { this.name = name; }
+Person.prototype.sayName = function() { return `Hello, I'm ${this.name}!`; };
+
+function Player(name, marker) {
+  this.name = name;
+  this.marker = marker;
+}
+Player.prototype.getMarker = function() { return `My marker is "${this.marker}"`; };
+
+<span class="good-line">Object.setPrototypeOf(Player.prototype, Person.prototype); // link card → card</span>
+
+const p = new Player("steve", "X");
+p.getMarker(); <span class="cmt">// found on Player.prototype (1 hop)</span>
+p.sayName();   <span class="cmt">// miss, miss, found on Person.prototype (2 hops)</span></code></pre></div>
+
+  <p class="reveal">Chain now: <code>p → Player.prototype → Person.prototype → Object.prototype → null</code>. Rules: set the link <strong>before</strong> creating instances (rewiring after is a perf hit), and single inheritance only — one stamp per object.</p>
+
+  <div class="trap reveal">
+    <span class="tag">Trap — the HAHAHA bug (aliasing ≠ inheritance)</span>
+    <code>Player.prototype = Person.prototype</code> doesn't inherit — it makes two factories share <strong>ONE physical card</strong>. When a third "class" (Enemy) does the same and then edits <code>sayName</code>, it defaces the shared card: every Player now screams HAHAHA too. Java analog: two classes literally sharing one method table. <strong>Link cards (<code>setPrototypeOf</code>), never merge them (<code>=</code>).</strong>
+  </div>
+
+  <!-- ============ 7. THIS ============ -->
+  <h2 class="reveal">7. <code>this</code> — Five Rules, Not One <span class="time">⏱ 7 min</span></h2>
+
+  <p class="reveal">Java has exactly one rule: <code>this</code> = the enclosing instance, fixed forever at compile time. JS re-decides <code>this</code> <strong>fresh at every call</strong>, based on HOW the function is called. It's a hat the function borrows from whoever's wearing it at the call site:</p>
+
+  <div class="cmp-wrap reveal">
+  <table class="cmp-table">
+    <tr><th>How the function is called</th><th>What <code>this</code> is</th></tr>
+    <tr><td><code>obj.method()</code></td><td><code>obj</code> — whatever is left of the dot</td></tr>
+    <tr><td><code>plainFunction()</code></td><td><code>undefined</code> (strict) / global object (sloppy)</td></tr>
+    <tr><td><code>new Fn()</code></td><td>the freshly created object</td></tr>
+    <tr><td><code>fn.call(x)</code> / <code>apply</code> / <code>bind</code></td><td><code>x</code> — you choose explicitly</td></tr>
+    <tr><td>arrow function <code>=&gt;</code></td><td><strong>no own this</strong> — inherits from where it was <em>written</em></td></tr>
+  </table>
+  </div>
+
+  <p class="reveal">Priority when rules collide: <code>new</code> &gt; <code>bind/call</code> &gt; dot &gt; plain.</p>
+
+  <div class="trap reveal">
+    <span class="tag">Trap — the detached method (impossible in Java)</span>
+    <div class="code-block" style="margin-top:0.6rem;"><pre><code>rps.playRound("rock");            <span class="cmt">// this = rps. Fine, feels like Java</span>
+setTimeout(rps.playRound, 1000);  <span class="cmt">// method DETACHED from the object —</span>
+                                  <span class="cmt">// when the timer fires, nothing is left</span>
+                                  <span class="cmt">// of the dot → this is NOT rps ❌</span></code></pre></div>
+    Java cannot even express "rip the method off the object" — in JS it's routine (callbacks everywhere) and it's a whole genre of bugs. The fix arrives in later lessons (<code>bind</code>, arrows-as-callbacks).
+  </div>
+
+  <div class="trap reveal">
+    <span class="tag">Trap — arrows as methods</span>
+    Arrow functions don't borrow the hat — they keep the <code>this</code> of the scope where they were <strong>written</strong>. An arrow as an object-literal or prototype method therefore never sees the instance. Rule for now: <strong>shorthand/function expressions for methods, never arrows.</strong>
+  </div>
+
+  <div class="practice reveal">
+    <h4>Practice: closure vs this — the interview classic</h4>
+    <div class="domain">domain: the Book exercise you just did</div>
+    <p class="prompt"><strong>Q:</strong> A Book constructor defines <code>info()</code> INSIDE the constructor reading the bare parameters (<code>`${title}, ${pages} pages`</code>) instead of <code>this.title</code>/<code>this.pages</code>. It works. Later someone does <code>book.pages = 300</code> and calls <code>book.info()</code>. What prints, and why?</p>
+    <button class="show-btn" onclick="this.nextElementSibling.classList.toggle('visible')">Show Answer</button>
+    <div class="answer">It still prints the OLD page count (e.g. 295). The inner function read the constructor's PARAMETERS via closure — variables captured at construction — not the object's properties. book.pages = 300 updated the object; the closure variables never change. Reading through this.pages follows the live object and prints 300. Two storage locations, one stale. Moving info() to the prototype forces the fix: prototype methods have no access to constructor parameters, so everything must ride in on `this`.</div>
+  </div>
+
+  <!-- ============ 8. CLASS PREVIEW + CHEAT TABLE ============ -->
+  <h2 class="reveal">8. Where <code>class</code> Fits + the Full Java Map <span class="time">⏱ 3 min</span></h2>
+
+  <p class="reveal">The <code>class</code> keyword you'll meet in two lessons is <strong>syntactic sugar over exactly this machinery</strong> — constructor function + prototype methods + a built-in new-guard. Java's <code>class</code> is a fundamental construct; JS's is a costume:</p>
+
+  <div class="code-block reveal"><pre><code>class Dog {                        function Dog(name) {
+  constructor(name) {                this.name = name;
+    this.name = name;      ===     }
+  }                                 Dog.prototype.bark = function() {
+  bark() { return "woof"; }          return "woof";
+}                                  };</code></pre></div>
+
+  <div class="cmp-wrap reveal">
+  <table class="cmp-table">
+    <tr><th>Java</th><th>JavaScript</th></tr>
+    <tr><td>Class = sealed compile-time blueprint</td><td>"Class" = function + live prototype object, editable at runtime</td></tr>
+    <tr><td>Methods dispatched via frozen vtable</td><td>Chain walked fresh on every property access</td></tr>
+    <tr><td><code>extends</code> resolved at compile time</td><td><code>setPrototypeOf(child, parent)</code> — runtime link between objects</td></tr>
+    <tr><td><code>this</code> = enclosing instance, always</td><td><code>this</code> = decided per call, five rules</td></tr>
+    <tr><td><code>private</code> keyword</td><td>Underscore convention only (real privacy later: closures, #fields)</td></tr>
+    <tr><td>Overloading by signature</td><td>None — last same-name definition wins</td></tr>
+    <tr><td>Missing member = compile error</td><td>Missing property = <code>undefined</code>, silently</td></tr>
+    <tr><td><code>instanceof</code>: static type check</td><td><code>instanceof</code>: "is Fn.prototype in the chain?" — dynamic</td></tr>
+  </table>
+  </div>
+
+  <!-- ============ QUIZ ============ -->
+  <h2 class="reveal">9. Quiz <span class="time">⏱ 5 min</span></h2>
+
+  <div class="quiz reveal">
+    <p class="quiz-q">1. Which of these is NOT one of the four things <code>new</code> does?</p>
+    <ul class="quiz-opts">
+      <li onclick="reveal('qa1', this, 0, 0)"><span class="radio"></span>Copies the prototype's methods into the new object</li>
+      <li onclick="reveal('qa1', this, 1, 0)"><span class="radio"></span>Creates a fresh empty object</li>
+      <li onclick="reveal('qa1', this, 2, 0)"><span class="radio"></span>Links the object's [[Prototype]] to Fn.prototype</li>
+      <li onclick="reveal('qa1', this, 3, 0)"><span class="radio"></span>Runs the function with <code>this</code> bound to the new object</li>
+    </ul>
+    <div class="quiz-answer" id="qa1">Nothing is ever copied — that's the whole point. Instances hold a LINK (the stamp), and lookup walks to the shared card at call time. If methods were copied, mutating the prototype later couldn't reach existing instances (but it does).</div>
+
+    <p class="quiz-q">2. <code>const rex = new Dog("Rex")</code>, then <code>Dog.prototype = { bark() { return "woof"; } }</code>, then <code>const pup = new Dog("Pup")</code>. What happens?</p>
+    <ul class="quiz-opts">
+      <li onclick="reveal('qa2', this, 0, 1)"><span class="radio"></span>Both bark — the prototype is live</li>
+      <li onclick="reveal('qa2', this, 1, 1)"><span class="radio"></span>pup barks; rex throws TypeError</li>
+      <li onclick="reveal('qa2', this, 2, 1)"><span class="radio"></span>rex barks; pup throws TypeError</li>
+      <li onclick="reveal('qa2', this, 3, 1)"><span class="radio"></span>Neither barks until instances are re-created</li>
+    </ul>
+    <div class="quiz-answer" id="qa2">Reassignment REPLACES the card. rex keeps his original stamp (old object, no bark) — stamps are never updated. pup, created after the swap, points at the new card. Mutation (<code>Dog.prototype.bark = ...</code>) would have reached both.</div>
+
+    <p class="quiz-q">3. <code>Dog.prototype</code> vs <code>Object.getPrototypeOf(rex)</code> — the precise relationship?</p>
+    <ul class="quiz-opts">
+      <li onclick="reveal('qa3', this, 0, 2)"><span class="radio"></span>Same thing, two syntaxes</li>
+      <li onclick="reveal('qa3', this, 1, 2)"><span class="radio"></span>The first is the function's template for FUTURE instances; the second reads an existing object's live link — equal only until the card is replaced</li>
+      <li onclick="reveal('qa3', this, 2, 2)"><span class="radio"></span>The first is the parent class, the second the child</li>
+      <li onclick="reveal('qa3', this, 3, 2)"><span class="radio"></span>getPrototypeOf returns a copy, .prototype the original</li>
+    </ul>
+    <div class="quiz-answer" id="qa3">Card on the factory wall vs stamp on the product. They point at the same object right after <code>new</code>, but they are different slots — reassign <code>Dog.prototype</code> and existing stamps stop matching it (the rex/pup split).</div>
+
+    <p class="quiz-q">4. <code>setTimeout(rps.playRound, 1000)</code> — inside playRound when the timer fires, <code>this</code> is…</p>
+    <ul class="quiz-opts">
+      <li onclick="reveal('qa4', this, 0, 3)"><span class="radio"></span><code>rps</code>, because the method belongs to it</li>
+      <li onclick="reveal('qa4', this, 1, 3)"><span class="radio"></span><code>setTimeout</code></li>
+      <li onclick="reveal('qa4', this, 2, 3)"><span class="radio"></span>undefined / the global object — the method was detached from rps</li>
+      <li onclick="reveal('qa4', this, 3, 3)"><span class="radio"></span>A copy of rps frozen at schedule time</li>
+    </ul>
+    <div class="quiz-answer" id="qa4"><code>this</code> is decided at CALL time by what's left of the dot. Passing <code>rps.playRound</code> hands over the bare function; when the timer calls it, nothing is left of the dot. Java's <code>this</code> is fixed at compile time — this bug class doesn't exist there.</div>
+
+    <p class="quiz-q">5. Why do methods belong on the prototype instead of inside the constructor?</p>
+    <ul class="quiz-opts">
+      <li onclick="reveal('qa5', this, 0, 4)"><span class="radio"></span>Constructor methods can't use <code>this</code></li>
+      <li onclick="reveal('qa5', this, 1, 4)"><span class="radio"></span>One shared copy vs a private duplicate stamped into every instance</li>
+      <li onclick="reveal('qa5', this, 2, 4)"><span class="radio"></span>Prototype methods run faster per call</li>
+      <li onclick="reveal('qa5', this, 3, 4)"><span class="radio"></span>It's only a style convention</li>
+    </ul>
+    <div class="quiz-answer" id="qa5">1,000 instances with constructor-defined methods = 1,000 function copies (every apartment gets its own washing machine). On the prototype: one shared laundry room, found via the chain. It's exactly what Java's method area does for you invisibly.</div>
+
+    <p class="quiz-q">6. JS's closest analog to <code>java.lang.Object</code>?</p>
+    <ul class="quiz-opts">
+      <li onclick="reveal('qa6', this, 0, 5)"><span class="radio"></span>The <code>Object</code> function itself</li>
+      <li onclick="reveal('qa6', this, 1, 5)"><span class="radio"></span><code>Object.prototype</code> — end of (nearly) every chain, supplying toString/valueOf/hasOwnProperty</li>
+      <li onclick="reveal('qa6', this, 2, 5)"><span class="radio"></span><code>globalThis</code></li>
+      <li onclick="reveal('qa6', this, 3, 5)"><span class="radio"></span>There is none — JS objects share no ancestor</li>
+    </ul>
+    <div class="quiz-answer" id="qa6"><code>Object.prototype</code> is the master binder at the back of the room. Note the split: instance-inherited defaults live there; static-feeling utilities (<code>Object.keys</code>, <code>Object.assign</code>, <code>Object.getPrototypeOf</code>) live on the Object FUNCTION and are not inherited — that's why it's never <code>player1.getPrototypeOf()</code>.</div>
+
+    <p class="quiz-q">7. <code>Player.prototype = Person.prototype</code> — what did you just do?</p>
+    <ul class="quiz-opts">
+      <li onclick="reveal('qa7', this, 0, 6)"><span class="radio"></span>Made Player inherit from Person</li>
+      <li onclick="reveal('qa7', this, 1, 6)"><span class="radio"></span>Aliased two "classes" onto ONE shared card — editing one now defaces the other (the HAHAHA bug)</li>
+      <li onclick="reveal('qa7', this, 2, 6)"><span class="radio"></span>Copied Person's methods into Player.prototype</li>
+      <li onclick="reveal('qa7', this, 3, 6)"><span class="radio"></span>Nothing — it throws</li>
+    </ul>
+    <div class="quiz-answer" id="qa7">That's aliasing, not inheritance — one physical object, two names. Inheritance links two separate cards so misses forward: <code>Object.setPrototypeOf(Player.prototype, Person.prototype)</code>, done before creating instances.</div>
+  </div>
+
+  <footer class="nav">
+    <span>JavaScript · Lesson 1</span>
+    <span>Next → Factory Functions &amp; the Module Pattern</span>
+  </footer>
+</main>
+
+<script>
+/* Code panel data — this lesson's code, shown by the toolbar's Code button */
+window.GM_CODE = {
+  blocks: [
+    { title: "Guarded constructor + prototype method (the pattern)",
+      note: "Data in the constructor, behavior on the prototype, guard against forgotten new.",
+      code: "function Book(title, author, pages, read) {\n  if (!new.target) {\n    throw Error(\"You must use the 'new' operator to call the constructor\");\n  }\n  this.title = title;\n  this.author = author;\n  this.pages = pages;\n  this.read = read;\n}\n\nBook.prototype.info = function() {\n  return `${this.title} by ${this.author}, ${this.pages} pages, ` +\n         (this.read ? \"already read\" : \"not read yet\");\n};\n\nconst theHobbit = new Book(\"The Hobbit\", \"J.R.R. Tolkien\", 295, false);\nconsole.log(theHobbit.info());\n// \"The Hobbit by J.R.R. Tolkien, 295 pages, not read yet\"" },
+    { title: "The rex / pup experiment (mutation vs reassignment)",
+      note: "Run in a browser console. The single most important distinction in the lesson.",
+      code: "function Dog(name) { this.name = name; }\nconst rex = new Dog(\"Rex\");\n\n// MUTATE the card: reaches rex, even though he already exists\nDog.prototype.speak = function() { return this.name + \" says hi\"; };\nrex.speak();   // \"Rex says hi\"  ✅\n\n// REPLACE the card: splits history\nDog.prototype = { bark() { return \"woof\"; } };\nconst pup = new Dog(\"Pup\");\npup.bark();    // \"woof\"        ✅ (stamped with the new card)\nrex.bark();    // TypeError     ❌ (stamp still points at the original card)\nrex.speak();   // still works   ✅ (original card kept its method)" },
+    { title: "Chain inspection toolkit",
+      note: "Everything you need to SEE the machinery instead of trusting prose.",
+      code: "function Player(name, marker) {\n  this.name = name;\n  this.marker = marker;\n}\nPlayer.prototype.sayName = function() { return this.name; };\nconst p1 = new Player(\"steve\", \"X\");\n\nObject.getPrototypeOf(p1) === Player.prototype;            // true\np1.hasOwnProperty(\"name\");                                  // true (own)\np1.hasOwnProperty(\"sayName\");                               // false (1 hop up)\np1.hasOwnProperty(\"valueOf\");                               // false (2 hops up)\nObject.getPrototypeOf(Player.prototype) === Object.prototype; // true\nObject.getPrototypeOf(Object.prototype);                    // null (end)" },
+    { title: "Prototypal inheritance (link, don't merge)",
+      note: "setPrototypeOf chains two cards; = would alias them (HAHAHA bug).",
+      code: "function Person(name) { this.name = name; }\nPerson.prototype.sayName = function() { return `Hello, I'm ${this.name}!`; };\n\nfunction Player(name, marker) {\n  this.name = name;\n  this.marker = marker;\n}\nPlayer.prototype.getMarker = function() { return `My marker is \\\"${this.marker}\\\"`; };\n\n// BEFORE creating instances:\nObject.setPrototypeOf(Player.prototype, Person.prototype);\n\nconst p = new Player(\"steve\", \"X\");\np.getMarker(); // 1 hop:  Player.prototype\np.sayName();   // 2 hops: Person.prototype" },
+    { title: "this — the five rules, demonstrated",
+      note: "Java has one rule; JS decides per call site. Priority: new > bind > dot > plain.",
+      code: "const rps = {\n  playerScore: 0,\n  playRound(choice) { return this.playerScore; }\n};\n\nrps.playRound(\"rock\");             // this = rps (left of the dot)\n\nconst f = rps.playRound;\nf();                                // this = undefined (strict) — detached!\n\nsetTimeout(rps.playRound, 1000);    // same detachment bug, async edition\n\nconst bound = rps.playRound.bind(rps);\nbound();                            // this = rps (explicitly chosen)\n\nnew Player(\"steve\", \"X\");         // this = the fresh object\n\n// Arrows: NO own this — they keep the this of where they were WRITTEN.\n// Never use arrows as object/prototype methods." }
+  ]
+};
+</script>
+<script src="../assets/glossary.js"></script>
+<script src="../assets/course.js"></script>
+<script src="../assets/toolbar.js"></script>
+<script>
+/* Quiz engine */
+var correctAnswers = [0, 1, 1, 2, 1, 1, 1];
+function reveal(id, el, selectedIdx, quizIdx) {
+  var answerEl = document.getElementById(id);
+  var isCorrect = selectedIdx === correctAnswers[quizIdx];
+  var siblings = el.parentElement.querySelectorAll('li');
+  siblings.forEach(function(li) { li.style.pointerEvents = 'none'; });
+  if (isCorrect) {
+    el.classList.add('correct');
+  } else {
+    el.classList.add('wrong-flash');
+    siblings[correctAnswers[quizIdx]].classList.add('correct');
+  }
+  answerEl.style.display = 'block';
+}
+
+/* Scroll reveal */
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) entry.target.classList.add('in');
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+</script>
+</body>
+</html>

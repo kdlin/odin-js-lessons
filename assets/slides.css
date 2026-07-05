@@ -1,0 +1,71 @@
+/* Slide embed component — renders professor's slides inline within lessons */
+
+.slide-embed {
+  margin: 1.6rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #1a1a1a;
+  position: relative;
+}
+.slide-embed img {
+  width: 100%;
+  display: block;
+  cursor: zoom-in;
+  transition: opacity 0.2s;
+}
+.slide-embed img:hover { opacity: 0.92; }
+.slide-embed .slide-caption {
+  padding: 0.6rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.slide-embed .slide-caption .slide-ref {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Slide group (multiple slides shown as a carousel-like strip) */
+.slide-group {
+  margin: 1.6rem 0;
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.5rem;
+}
+.slide-group .slide-embed {
+  margin: 0;
+  min-width: 80%;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Lightbox overlay */
+.slide-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  padding: 2rem;
+}
+.slide-lightbox.active { display: flex; }
+.slide-lightbox img {
+  max-width: 95vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
